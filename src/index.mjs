@@ -9,6 +9,9 @@ import {createClient}from'@supabase/supabase-js'
 
 const required=['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','BOT_QR_TOKEN'];for(const key of required)if(!process.env[key])throw Error(`Defina ${key} no arquivo .env`)
 const supabase=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}})
+const originalChannel=supabase.channel.bind(supabase);let realtimeChannelSequence=0
+// O Baileys pode reconectar o socket; cada ciclo precisa de um canal Realtime novo.
+supabase.channel=(topic,options)=>originalChannel(`${topic}-${Date.now()}-${++realtimeChannelSequence}`,options)
 const logger=P({level:'silent'});const authDir=process.env.BAILEYS_AUTH_DIR||'./auth_info'
 const textOf=message=>message?.conversation||message?.extendedTextMessage?.text||message?.imageMessage?.caption||''
 const normalize=text=>text.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
