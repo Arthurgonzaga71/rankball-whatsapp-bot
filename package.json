@@ -1,0 +1,15 @@
+{
+  "name": "rankball-whatsapp-bot",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node src/index.mjs" },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@supabase/supabase-js": "^2.57.4",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "dotenv": "^16.6.1",
+    "pino": "^9.9.4",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
