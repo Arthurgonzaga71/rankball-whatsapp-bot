@@ -54,10 +54,19 @@ const server = http.createServer(async (req, res) => {
   }
   if (path === '/api/start' && req.method === 'POST') { lastError = ''; startBot(); res.writeHead(202); return res.end() }
   if (path === '/api/stop' && req.method === 'POST') { stopBot(); res.writeHead(202); return res.end() }
+  if (path === '/api/groups' && req.method === 'GET') {
+    if (!child) { res.writeHead(409); return res.end('Inicie o bot primeiro.') }
+    try {
+      const response = await fetch(`http://127.0.0.1:${childPort}/internal/groups`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) })
+      res.writeHead(response.status, { 'Content-Type': 'application/json; charset=utf-8' }); return res.end(await response.text())
+    } catch { res.writeHead(503); return res.end('Bot indisponível.') }
+  }
   if (req.method === 'POST' && ['/api/send-list', '/api/send-menu', '/api/send-vote'].includes(path)) {
     if (!child) { res.writeHead(409); return res.end('Inicie o bot primeiro.') }
     try {
-      const response = await fetch(`http://127.0.0.1:${childPort}/internal/${path.slice(5)}`, {
+      const groupId = new URL(req.url, 'http://localhost').searchParams.get('group') || ''
+      if (!/^[0-9a-f-]{36}$/i.test(groupId)) { res.writeHead(400); return res.end('Selecione um grupo válido.') }
+      const response = await fetch(`http://127.0.0.1:${childPort}/internal/${path.slice(5)}?group=${encodeURIComponent(groupId)}`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30000)
       })
       res.writeHead(response.status, { 'Content-Type': 'text/plain; charset=utf-8' })
