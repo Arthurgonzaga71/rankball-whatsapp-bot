@@ -18,6 +18,7 @@ const originalChannel=supabase.channel.bind(supabase);let realtimeChannelSequenc
 supabase.channel=(topic,options)=>originalChannel(`${topic}-${Date.now()}-${++realtimeChannelSequence}`,options)
 const logger=P({level:process.env.LOG_LEVEL||'silent'});const authDir=process.env.BAILEYS_AUTH_DIR||'./auth_info'
 const textOf=message=>{
+  message=normalizeMessageContent(message)||message
   const selectedRow=message?.listResponseMessage?.singleSelectReply?.selectedRowId||message?.buttonsResponseMessage?.selectedButtonId
   if(selectedRow)return selectedRow
   const params=message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson
@@ -366,18 +367,21 @@ async function start(){
       if(!message.message||!message.key.remoteJid)continue
       try{if(await processEncryptedPollVote(sock,message))continue}catch(error){console.error('Falha ao processar voto recebido:',error);continue}
       const chatJid=message.key.remoteJid
-      const senderJids=[message.key.participantAlt,message.key.participant,chatJid].filter(Boolean)
-      const phoneJids=(await Promise.all(senderJids.map(jid=>jid.endsWith('@lid')?sock.signalRepository.lidMapping.getPNForLID(jid):null))).filter(Boolean)
-      const senderIdentities=[...new Set([...senderJids,...phoneJids])]
-      const senderJid=senderJids.find(Boolean)
       const command=parseCommand(textOf(message.message))
       if(!command)continue
       const isGroup=chatJid.endsWith('@g.us')
+      console.log(`Comando ${command} recebido em ${isGroup?'grupo':'conversa privada'}.`)
       try{
         if(isGroup&&!await isAllowedGroup(chatJid)){console.warn('Grupo não autorizado:',chatJid);continue}
         // !ping é um teste de conectividade; não requer cadastro de jogador.
         if(command==='PING'){await sock.sendMessage(chatJid,{text:'🏓 pong! O bot RankBall está online.'});continue}
         if(command==='AJUDA'||command==='MENU'){await sock.sendMessage(chatJid,{text:helpMessage()});continue}
+        const senderJids=[message.key.participantAlt,message.key.participant,chatJid].filter(Boolean)
+        const phoneJids=(await Promise.all(senderJids.map(async jid=>{
+          if(!jid.endsWith('@lid'))return null
+          try{return await sock.signalRepository.lidMapping.getPNForLID(jid)}catch(error){console.error('Falha ao identificar número do remetente:',error);return null}
+        }))).filter(Boolean)
+        const senderIdentities=[...new Set([...senderJids,...phoneJids])]
         const link=await resolvePlayerLink(senderIdentities)
         if(!link){await sock.sendMessage(chatJid,{text:'Seu número ainda não está vinculado a um jogador. Peça ao administrador.'});continue}
         if(isGroup){const{data:group,error}=await supabase.from('whatsapp_groups').select('id').eq('group_jid',chatJid).eq('organization_id',link.organization_id).eq('active',true).maybeSingle();if(error)throw error;if(!group){await sock.sendMessage(chatJid,{text:'Seu cadastro não pertence à organização deste grupo.'});continue}}
