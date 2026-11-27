@@ -54,7 +54,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (path === '/api/start' && req.method === 'POST') { lastError = ''; startBot(); res.writeHead(202); return res.end() }
   if (path === '/api/stop' && req.method === 'POST') { stopBot(); res.writeHead(202); return res.end() }
-  if (req.method === 'POST' && ['/api/send-list', '/api/send-menu'].includes(path)) {
+  if (req.method === 'POST' && ['/api/send-list', '/api/send-menu', '/api/send-vote'].includes(path)) {
     if (!child) { res.writeHead(409); return res.end('Inicie o bot primeiro.') }
     try {
       const response = await fetch(`http://127.0.0.1:${childPort}/internal/${path.slice(5)}`, {
