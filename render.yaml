@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: rankball-whatsapp-bot
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: BOT_QR_TOKEN
+        sync: false
+      - key: PANEL_ORIGIN
+        value: https://rankball-bot-painel.vercel.app
+      - key: BOT_AUTH_STORE
+        value: supabase
