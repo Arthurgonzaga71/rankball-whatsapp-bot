@@ -16,7 +16,7 @@ export function parseCommand(input){
 export function guestNameFromCommand(input){const text=String(input||'').trim().replace(/^!\s*/,'');const match=text.match(/^convidado\s+(.+)$/i);return (match?.[1].trim()||'').replace(/^["“”']|["“”']$/g,'').trim()}
 
 export function helpMessage(){
-  return '⚽ *Comandos do RankBall*\n\n!euvou ou !vou — confirmar presença\n!naovou ou !não vou — informar ausência\n!doente ou !lesão — informar lesão/doença\n!convidado Nome — adicionar convidado\n!status — consultar sua situação\n!lista — consultar a lista\n!ping — testar o bot'
+  return `⚽ *RANKBALL | CENTRAL DE COMANDOS*\n\n📋 *Presença*\n✅ *!vou* ou *!euvou* — confirmar presença\n❌ *!naovou* ou *!não vou* — informar ausência\n🩹 *!doente* ou *!lesão* — informar lesão ou doença\n\n👥 *Lista e convidados*\n📝 *!lista* — consultar a lista\n👤 *!convidado Nome* — adicionar um convidado\n📌 *!status* — consultar sua situação\n\n🤖 *Ajuda*\n🏓 *!ping* — verificar se o bot está online\n💬 *!ajuda* ou *!menu* — exibir esta mensagem`
 }
 
 export function phoneCandidatesFromJid(jid){
