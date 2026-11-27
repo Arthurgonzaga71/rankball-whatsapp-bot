@@ -21,7 +21,7 @@ function startBot() {
   if (child) return
   stopping = false
   const processChild = spawn(process.execPath, ['src/index.mjs'], {
-    env: { ...process.env, PORT: String(childPort) }, stdio: ['ignore', 'pipe', 'pipe']
+    env: { ...process.env, PORT: String(childPort), BOT_BIND_HOST: '127.0.0.1' }, stdio: ['ignore', 'pipe', 'pipe']
   })
   child = processChild
   processChild.stdout.on('data', chunk => process.stdout.write(chunk))
@@ -54,6 +54,16 @@ const server = http.createServer(async (req, res) => {
   }
   if (path === '/api/start' && req.method === 'POST') { lastError = ''; startBot(); res.writeHead(202); return res.end() }
   if (path === '/api/stop' && req.method === 'POST') { stopBot(); res.writeHead(202); return res.end() }
+  if (req.method === 'POST' && ['/api/send-list', '/api/send-menu'].includes(path)) {
+    if (!child) { res.writeHead(409); return res.end('Inicie o bot primeiro.') }
+    try {
+      const response = await fetch(`http://127.0.0.1:${childPort}/internal/${path.slice(5)}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30000)
+      })
+      res.writeHead(response.status, { 'Content-Type': 'text/plain; charset=utf-8' })
+      return res.end(await response.text())
+    } catch { res.writeHead(503); return res.end('Não foi possível acionar o bot.') }
+  }
   if (path === '/api/qr' && req.method === 'GET') {
     if (!child) { res.writeHead(409); return res.end('Inicie o bot primeiro.') }
     try {
