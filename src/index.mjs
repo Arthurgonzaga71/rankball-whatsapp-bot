@@ -66,7 +66,7 @@ async function processEncryptedPollVote(sock,message){
   console.log('Voto de enquete recebido.')
   return true
 }
-http.createServer(async(request,response)=>{const url=new URL(request.url||'/',`http://localhost:${port}`);if(request.method==='GET'&&url.pathname==='/internal/groups'){if(request.headers.authorization!==`Bearer ${qrToken}`){response.writeHead(401);return response.end()}try{const{data,error}=await supabase.from('whatsapp_groups').select('id,name').eq('active',true).order('name');if(error)throw error;response.writeHead(200,{'content-type':'application/json'});return response.end(JSON.stringify(data||[]))}catch(error){console.error('Group lookup failed:',error);response.writeHead(500);return response.end('[]')}}if(request.method==='POST'&&['/internal/send-list','/internal/send-menu','/internal/send-vote'].includes(url.pathname)){if(request.headers.authorization!==`Bearer ${qrToken}`){response.writeHead(401);response.end('N?o autorizado');return}if(!currentSocket||!whatsappConnected){response.writeHead(409);response.end('WhatsApp desconectado.');return}try{const{data:groups,error}=await supabase.from('whatsapp_groups').select('id,organization_id,group_jid,name').eq('id',url.searchParams.get('group')||'').eq('active',true);if(error)throw error;if(!groups?.length){response.writeHead(404);response.end('Grupo ativo nao encontrado.');return}if(url.pathname==='/internal/send-vote'&&groups[0].name!=='Terceiro Tempo FC'){response.writeHead(409);response.end('A votacao esta configurada para o grupo Terceiro Tempo FC.');return}if(url.pathname==='/internal/send-vote'){const result=await sendManualAwards(currentSocket,groups);response.writeHead(result.ok?200:409);response.end(result.message);return}const result=await sendGroupMessage({client:supabase,socket:currentSocket,groupId:groups[0].id,createMessage:group=>url.pathname==='/internal/send-list'?presenceListV2(group.organization_id):helpMessage()});response.writeHead(result.status,{'content-type':'text/plain; charset=utf-8'});response.end(result.message)}catch(error){console.error('Falha na a??o solicitada pelo painel:',error);response.writeHead(500);response.end('N?o foi poss?vel enviar a mensagem. Consulte os logs do bot.')}return}if(url.pathname==='/health'){response.writeHead(200,{'content-type':'application/json'});response.end(JSON.stringify({ok:true,whatsappConnected,service:'rankball-whatsapp-bot'}));return}if(url.pathname==='/qr'){if(url.searchParams.get('token')!==qrToken){response.writeHead(403);response.end('Acesso negado.');return}if(!latestQr){response.writeHead(404,{'content-type':'text/html; charset=utf-8'});response.end('<h1>QR ainda não disponível</h1><p>Atualize esta página após o bot gerar o QR.</p>');return}const image=await QRCode.toDataURL(latestQr,{width:720,margin:2,errorCorrectionLevel:'M'});response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp</title></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#07120e;color:#fff;font:16px system-ui"><main style="max-width:760px;padding:24px;text-align:center"><h1>Conectar o WhatsApp</h1><p>No segundo número: Dispositivos conectados → Conectar dispositivo.</p><img src="${image}" width="min(100%,720)" style="background:#fff;padding:16px;border-radius:18px"><p>Este QR expira rapidamente. Atualize esta página se necessário.</p></main></body></html>`);return}response.writeHead(200,{'content-type':'text/plain'});response.end('RankBall WhatsApp bot is running. Use /qr to connect.')}).listen(port,process.env.BOT_BIND_HOST||'0.0.0.0',()=>console.log(`Health server listening on ${port}`))
+http.createServer(async(request,response)=>{const url=new URL(request.url||'/',`http://localhost:${port}`);if(request.method==='GET'&&url.pathname==='/internal/groups'){if(request.headers.authorization!==`Bearer ${qrToken}`){response.writeHead(401);return response.end()}try{const{data,error}=await supabase.from('whatsapp_groups').select('id,name').eq('active',true).order('name');if(error)throw error;response.writeHead(200,{'content-type':'application/json'});return response.end(JSON.stringify(data||[]))}catch(error){console.error('Group lookup failed:',error);response.writeHead(500);return response.end('[]')}}if(request.method==='POST'&&['/internal/send-list','/internal/send-menu','/internal/send-vote'].includes(url.pathname)){if(request.headers.authorization!==`Bearer ${qrToken}`){response.writeHead(401);response.end('N?o autorizado');return}if(!currentSocket||!whatsappConnected){response.writeHead(409);response.end('WhatsApp desconectado.');return}try{const{data:groups,error}=await supabase.from('whatsapp_groups').select('id,organization_id,group_jid,name').eq('id',url.searchParams.get('group')||'').eq('active',true);if(error)throw error;if(!groups?.length){response.writeHead(404);response.end('Grupo ativo nao encontrado.');return}if(url.pathname==='/internal/send-vote'){const result=await sendManualAwards(currentSocket,groups);response.writeHead(result.ok?200:409);response.end(result.message);return}const result=await sendGroupMessage({client:supabase,socket:currentSocket,groupId:groups[0].id,createMessage:group=>url.pathname==='/internal/send-list'?presenceListV2(group.organization_id):helpMessage()});response.writeHead(result.status,{'content-type':'text/plain; charset=utf-8'});response.end(result.message)}catch(error){console.error('Falha na a??o solicitada pelo painel:',error);response.writeHead(500);response.end('N?o foi poss?vel enviar a mensagem. Consulte os logs do bot.')}return}if(url.pathname==='/health'){response.writeHead(200,{'content-type':'application/json'});response.end(JSON.stringify({ok:true,whatsappConnected,service:'rankball-whatsapp-bot'}));return}if(url.pathname==='/qr'){if(url.searchParams.get('token')!==qrToken){response.writeHead(403);response.end('Acesso negado.');return}if(!latestQr){response.writeHead(404,{'content-type':'text/html; charset=utf-8'});response.end('<h1>QR ainda não disponível</h1><p>Atualize esta página após o bot gerar o QR.</p>');return}const image=await QRCode.toDataURL(latestQr,{width:720,margin:2,errorCorrectionLevel:'M'});response.writeHead(200,{'content-type':'text/html; charset=utf-8'});response.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conectar WhatsApp</title></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#07120e;color:#fff;font:16px system-ui"><main style="max-width:760px;padding:24px;text-align:center"><h1>Conectar o WhatsApp</h1><p>No segundo número: Dispositivos conectados → Conectar dispositivo.</p><img src="${image}" width="min(100%,720)" style="background:#fff;padding:16px;border-radius:18px"><p>Este QR expira rapidamente. Atualize esta página se necessário.</p></main></body></html>`);return}response.writeHead(200,{'content-type':'text/plain'});response.end('RankBall WhatsApp bot is running. Use /qr to connect.')}).listen(port,process.env.BOT_BIND_HOST||'0.0.0.0',()=>console.log(`Health server listening on ${port}`))
 
 async function isAllowedGroup(jid){const{data,error}=await supabase.from('whatsapp_groups').select('id').eq('group_jid',jid).eq('active',true).limit(1);if(error)throw error;return Boolean(data?.length)}
 async function sendUpdatedList(sock,link,chatJid,isGroup,matchId){
@@ -245,6 +245,9 @@ async function restoreAwardPolls(){
 }
 async function sendPendingPolls(sock,award,groupJid){
   const categories=categoryDefinitions.map(definition=>definition.category)
+  const{data:sentPolls,error:sentError}=await supabase.from('weekly_award_polls').select('whatsapp_group_jid').eq('award_id',award.id).eq('status','SENT')
+  if(sentError)throw sentError
+  if(sentPolls?.some(poll=>poll.whatsapp_group_jid&&poll.whatsapp_group_jid!==groupJid))throw new Error('A votação desta semana já começou em outro grupo.')
   const{data:polls,error}=await supabase.from('weekly_award_polls').select('id,category,question,status,weekly_award_options(player_id,option_label,option_order)').eq('award_id',award.id).eq('status','PENDING').in('category',categories)
   if(error)throw error
   for(const poll of polls||[]){
@@ -263,11 +266,11 @@ async function sendPendingPolls(sock,award,groupJid){
 }
 let manualAwardsRunning=false
 async function sendManualAwards(sock,groups){
-  if(manualAwardsRunning)return {ok:false,message:'A vota??o j? est? sendo processada.'}
+  if(manualAwardsRunning)return {ok:false,message:'A votação já está sendo processada.'}
   manualAwardsRunning=true
   try{
     const now=bahiaParts(new Date()),day=`${now.year}-${now.month}-${now.day}`
-    if(now.weekday!=='Mon')return {ok:false,message:'A vota??o ? da partida de segunda-feira. Tente no dia da partida.'}
+    if(now.weekday!=='Mon')return {ok:false,message:'A votação é da partida de segunda-feira. Tente no dia da partida.'}
     let sent=0
     for(const group of groups){
       const players=await mondayPlayers(group.organization_id,day)
@@ -275,6 +278,12 @@ async function sendManualAwards(sock,groups){
       const {data:existing,error:readError}=await supabase.from('weekly_awards').select('id,organization_id,baba_date,status').eq('organization_id',group.organization_id).eq('baba_date',day).maybeSingle()
       if(readError)throw readError
       if(existing&&['SENT','CLOSED'].includes(existing.status))continue
+      if(existing){
+        const {data:sentPolls,error:sentError}=await supabase.from('weekly_award_polls').select('whatsapp_group_jid').eq('award_id',existing.id).eq('status','SENT')
+        if(sentError)throw sentError
+        if(sentPolls?.some(poll=>poll.whatsapp_group_jid&&poll.whatsapp_group_jid!==group.group_jid))return {ok:false,message:'A votação desta semana já começou em outro grupo.'}
+      }
+      try{await sock.groupMetadata(group.group_jid)}catch(error){console.error('Falha ao acessar grupo para votação:',error);return {ok:false,message:'O bot não conseguiu acessar o grupo escolhido. Confira se o número do bot participa dele.'}}
       let award=existing
       if(!award){const {data,error}=await supabase.from('weekly_awards').insert({organization_id:group.organization_id,baba_date:day}).select('id,organization_id,baba_date,status').single();if(error)throw error;award=data}
       await ensurePolls(award,players)
@@ -283,7 +292,7 @@ async function sendManualAwards(sock,groups){
       if(!pending?.length)continue
       await sendPendingPolls(sock,award,group.group_jid);sent++
     }
-    return sent?{ok:true,message:'Vota??o processada e enquetes dispon?veis enviadas ao grupo selecionado.'}:{ok:false,message:'N?o h? candidatos suficientes para uma categoria ou a vota??o de hoje j? foi enviada.'}
+    return sent?{ok:true,message:'Votação processada e enquetes disponíveis enviadas ao grupo selecionado.'}:{ok:false,message:'Não há candidatos suficientes para uma categoria ou a votação de hoje já foi enviada.'}
   }finally{manualAwardsRunning=false}
 }
 async function runMondayAutomation(sock){if(!whatsappConnected)return;const now=bahiaParts(new Date());if(now.weekday!=='Mon'||now.hour!=='23')return;const babaDate=`${now.year}-${now.month}-${now.day}`;const{data:groups,error:groupsError}=await supabase.from('whatsapp_groups').select('organization_id,group_jid').eq('name','Terceiro Tempo FC').eq('active',true);if(groupsError)throw groupsError;for(const group of groups||[]){const{data:award,error:awardError}=await supabase.from('weekly_awards').upsert({organization_id:group.organization_id,baba_date:babaDate},{onConflict:'organization_id,baba_date'}).select('id,organization_id,baba_date').single();if(awardError)throw awardError;const players=await mondayPlayers(group.organization_id,babaDate);await ensurePolls(award,players);await sendPendingPolls(sock,award,group.group_jid)}}
@@ -304,10 +313,11 @@ async function finalizeWeeklyAwards(sock){
   for(const award of announcements||[]){
     const results=award.tally_results||[]
     const text=results.length?`🏅 *Resultado da votação*\n\n${results.map(result=>`${labels[result.category]}: *${result.name}* (${result.votes} voto${result.votes===1?'':'s'})`).join('\n')}\n\nEm caso de empate, todos os empatados recebem a conquista.`:'🏅 A votação foi encerrada sem votos.'
-    const{data:groups,error:groupsError}=await supabase.from('whatsapp_groups').select('group_jid').eq('organization_id',award.organization_id).eq('name','Terceiro Tempo FC').eq('active',true)
-    if(groupsError)throw groupsError
-    if(!groups?.length)continue
-    for(const group of groups)await sock.sendMessage(group.group_jid,{text})
+    const{data:polls,error:pollsError}=await supabase.from('weekly_award_polls').select('whatsapp_group_jid').eq('award_id',award.id).eq('status','SENT').not('whatsapp_group_jid','is',null)
+    if(pollsError)throw pollsError
+    const destinations=[...new Set((polls||[]).map(poll=>poll.whatsapp_group_jid))]
+    if(!destinations.length){console.error('Não foi possível anunciar resultado: grupo da votação não encontrado.',award.id);continue}
+    for(const groupJid of destinations)await sock.sendMessage(groupJid,{text})
     const{error:updateError}=await supabase.from('weekly_awards').update({tally_announced_at:new Date().toISOString()}).eq('id',award.id)
     if(updateError)throw updateError
   }
